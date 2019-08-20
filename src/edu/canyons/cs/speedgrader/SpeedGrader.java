@@ -1,38 +1,27 @@
 package edu.canyons.cs.speedgrader;
+import cs.canyons.cs.speedgrader.util.UnzipWizard;
 
+import java.io.File;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.event.ActionEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 
-import java.io.File;
 
 public class SpeedGrader {
-    @FXML
-    private ChoiceBox<Integer> numCLAChoiceBox;
-    @FXML
-    private ChoiceBox<Integer> numIterChoiceBox;
-    @FXML
-    private Button generateButton;
-    @FXML
-    private VBox claIterVBox;
-    @FXML
-    private Button inputPathButton;
-    @FXML
-    private TextField inputPathTextField;
-    @FXML
-    private CheckBox unzipCheckBox;
-    @FXML
-    private Button outputPathButton;
-    @FXML
-    private TextField outputPathTextField;
-    @FXML
-    private TextField outputFilenameTextField;
-    @FXML
-    private TextField projectMainTextField;
-    @FXML
-    private Button executeButton;
+    @FXML private ChoiceBox<Integer> numCLAChoiceBox;
+    @FXML private ChoiceBox<Integer> numIterChoiceBox;
+    @FXML private Button generateButton;
+    @FXML private VBox claIterVBox;
+    @FXML private Button inputPathButton;
+    @FXML private TextField inputPathTextField;
+    @FXML private CheckBox unzipCheckBox;
+    @FXML private Button outputPathButton;
+    @FXML private TextField outputPathTextField;
+    @FXML private TextField outputFilenameTextField;
+    @FXML private TextField projectMainTextField;
+    @FXML private Button executeButton;
 
     Controller[] controllersArray;
 
@@ -84,11 +73,29 @@ public class SpeedGrader {
         // TODO: iterate over student folders to find java source
         // TODO: generate output text file using program outputs
 
-        String projectMainFilename = projectMainTextField.getText() + ".java";
-        String outputFilename = outputFilenameTextField.getText() + ".txt";
+        File classFolder= new File(inputPathTextField.getText());
+        String outputDirName = outputPathTextField.getText();
+        File workingFolder;
 
-        System.out.println("unzip: " + unzipCheckBox.isSelected());
-        System.out.println("project main filename: " + projectMainFilename);
-        System.out.println("output filename: " + outputFilename);
+        // might only need a string for project main, append to input path
+        File projectMainFile = new File(projectMainTextField.getText() + ".java");
+        // only need a string for the output filename, append to output path
+        File outputFile = new File(outputFilenameTextField.getText() + ".txt");
+
+        if(unzipCheckBox.isSelected()) {
+            // user specifies that unzipping is required for given class folder
+            UnzipWizard.unzipDir(classFolder, outputDirName);
+            workingFolder = new File(outputDirName);
+        } else
+            workingFolder = classFolder;
+
+        File[] studentProjArray = workingFolder.listFiles();
+
+        for(File eachProj: studentProjArray) {
+            if(eachProj.isFile() && (eachProj.getName().endsWith(".java"))) {
+                // execute each java source file and record output
+                System.out.println("executing programs...");
+            }
+        } // end enumeration of class Folder
     }
 }

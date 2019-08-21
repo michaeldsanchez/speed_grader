@@ -5,8 +5,6 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Pane;
 import org.w3c.dom.Text;
 
-import java.util.concurrent.Flow;
-
 public class Controller {
     private TextField[] textFieldsArray;
     private FlowPane iterPane;

@@ -6,3 +6,5 @@
 *.class
 
 *.iml
+
+\.DS_Store

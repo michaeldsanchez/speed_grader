@@ -28,7 +28,7 @@
       <Label layoutX="35.0" layoutY="377.0" text="Project Main:" />
       <TextField fx:id="outputPathTextField" layoutX="70.0" layoutY="329.0" prefHeight="25.0" prefWidth="500.0" />
       <Label layoutX="234.0" layoutY="377.0" text=".java" />
-      <TextField fx:id="projectMain" layoutX="124.0" layoutY="372.0" prefHeight="25.0" prefWidth="102.0" />
+      <TextField fx:id="projectMainTextField" layoutX="124.0" layoutY="372.0" prefHeight="25.0" prefWidth="102.0" />
       <Label layoutX="306.0" layoutY="377.0" text="Output Filename" />
       <TextField fx:id="outputFilenameTextField" layoutX="425.0" layoutY="372.0" prefHeight="25.0" prefWidth="150.0" />
       <Label layoutX="577.0" layoutY="377.0" text=".txt" />

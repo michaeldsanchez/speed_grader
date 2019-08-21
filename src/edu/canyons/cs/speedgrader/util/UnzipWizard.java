@@ -18,7 +18,7 @@
  *               extractions and uses UserInput to manage user input.
  ********************************************************************************
  */
-package cs.canyons.cs.speedgrader.util;
+package edu.canyons.cs.speedgrader.util;
 import java.io.File;
 import net.lingala.zip4j.core.ZipFile;
 
@@ -31,8 +31,8 @@ public class UnzipWizard {
         for(File eachProj: studentProjArray) {
             if(eachProj.isFile() && (eachProj.getName().endsWith(".zip"))) {
                 // create a new directory for the unzip using original project name
-                String fixedProjDir = eachProj.getPath().replaceAll(".zip", "");
-                String outputFilePath = outputDirName + File.pathSeparator + fixedProjDir;
+                String fixedProjDir = eachProj.getName().replaceAll(".zip", "");
+                String outputFilePath = outputDirName + File.separator + fixedProjDir;
 
                 File outputFolder = new File(outputFilePath);
                 outputFolder.mkdirs();

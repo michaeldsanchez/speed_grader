@@ -1,11 +1,11 @@
 package edu.canyons.cs.speedgrader;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import edu.canyons.cs.speedgrader.util.UnzipWizard;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.Time;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +18,8 @@ import javafx.stage.DirectoryChooser;
 
 // apache dependency for finding a file
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.NameFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 
 public class SpeedGrader {
     // FXML variables for gui layout
@@ -25,11 +27,11 @@ public class SpeedGrader {
     @FXML private ChoiceBox<Integer> numIterChoiceBox;
     @FXML private Button generateButton;
     @FXML private VBox claIterVBox;
-    @FXML private Button inputPathButton;
-    @FXML private TextField inputPathTextField;
+    @FXML private Button classProjDirButton;
+    @FXML private TextField classProjDirTextField;
     @FXML private CheckBox unzipCheckBox;
-    @FXML private Button outputPathButton;
-    @FXML private TextField outputPathTextField;
+    @FXML private Button outputDirButton;
+    @FXML private TextField outputDirTextField;
     @FXML private TextField outputFilenameTextField;
     @FXML private TextField projectMainTextField;
     @FXML private Button executeButton;
@@ -66,20 +68,20 @@ public class SpeedGrader {
     @FXML
     private void handleInputPathButton(ActionEvent e) {
         DirectoryChooser inputPath = new DirectoryChooser();
-        File selectedDirectory = inputPath.showDialog(inputPathButton.getScene().getWindow());
+        File selectedDirectory = inputPath.showDialog(classProjDirButton.getScene().getWindow());
 
-        inputPathTextField.setText(selectedDirectory.getAbsolutePath());
+        classProjDirTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
     }
 
     @FXML
     private void handleOutputPathButton(ActionEvent e) {
         DirectoryChooser outputPath = new DirectoryChooser();
-        File selectedDirectory = outputPath.showDialog(outputPathButton.getScene().getWindow());
+        File selectedDirectory = outputPath.showDialog(outputDirButton.getScene().getWindow());
 
-        outputPathTextField.setText(selectedDirectory.getAbsolutePath());
+        outputDirTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
     }
 
-    private static String compileJava(String absSourcePath) {
+    private static String compileJava(String absBuildXmlPath) {
         // returns true if the compile process was successful
         // TODO: test a failed compile
         Process compileProcess = null;
@@ -88,7 +90,19 @@ public class SpeedGrader {
         StringBuilder compileOutput = new StringBuilder();
 
         try {
-            compileProcess = Runtime.getRuntime().exec("javac " + absSourcePath);
+            String commandStr;
+//            System.out.println("PATH:" + System.getenv("ANT_HOME"));
+//            commandStr = System.getenv("ANT_HOME") + "/bin/ant -f " + absBuildXmlPath ;
+            File file = new File("/Applications/NetBeans/NetBeans8.2.app/Contents/Resources/NetBeans/extide/ant/bin/ant");
+            commandStr = file.getAbsolutePath() + " -f " + absBuildXmlPath;
+            System.out.println(commandStr);
+            compileProcess = Runtime.getRuntime().exec(commandStr);
+
+            try {
+                compileProcess.waitFor(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
             try {
                 compileInputStream = new BufferedReader(new InputStreamReader(compileProcess.getInputStream()));
@@ -106,6 +120,7 @@ public class SpeedGrader {
                     errorLine = compileErrorStream.readLine();
                 }
 
+                compileProcess.destroy();
 
             } catch (IOException e) {
                 System.err.println("Error on: execStream.readline()");
@@ -113,20 +128,20 @@ public class SpeedGrader {
             }
         } catch (IOException e) {
             // java source code failed to compile
-            System.out.println("failed to compile " + absSourcePath);
+            System.out.println("Error while running: ANT_HOME -f " + absBuildXmlPath);
+            e.printStackTrace();
         }
 
         return compileOutput.toString();
     } // end compileJava(String):boolean
 
     private static String execJava(String absSourcePath, String args) {
-        String absObjectPath = absSourcePath.replaceAll(".java", "");
         Process execProcess = null;
         BufferedReader execStream = null;
         StringBuilder execOutput = new StringBuilder();
 
         try {
-            execProcess = Runtime.getRuntime().exec("java " + absObjectPath + " " + args);
+            execProcess = Runtime.getRuntime().exec("java -jar " + absSourcePath + " " + args);
 
             try {
                 execStream = new BufferedReader(new InputStreamReader(execProcess.getInputStream()));
@@ -142,7 +157,7 @@ public class SpeedGrader {
             }
         } catch (IOException e) {
             // java object code failed to run
-            System.err.println("Error while running: javac " + absObjectPath);
+            System.err.println("Error while running: java -jar " + absSourcePath);
             e.printStackTrace();
         }
         return execOutput.toString();
@@ -154,28 +169,36 @@ public class SpeedGrader {
         // TODO: check that output path does not contain '.txt'
         // TODO: generate output text file using program outputs
         // the folder which contains all of the java student projects
-        File classFolder= new File(inputPathTextField.getText());
+        File classProjDir = new File(classProjDirTextField.getText());
 
         // might only need a string for project main, append to input path
-        String projectMainFilename = projectMainTextField.getText() + ".java";
+        String projectMainFilename = projectMainTextField.getText() + ".jar";
 
-        if(unzipCheckBox.isSelected()) {
+        if (unzipCheckBox.isSelected()) {
             // user specifies that unzipping is required for given class folder
-            UnzipWizard.unzipDir(classFolder, outputFilenameTextField.getText());
+            UnzipWizard.unzipDir(classProjDir, outputDirTextField.getText());
 
             // output unzipped contents to specified output directory, becomes new working directory
-            classFolder = new File(outputPathTextField.getText());
+            classProjDir = new File(outputDirTextField.getText());
         }
 
         // use apache commons library to find a file in our working directory of student projects
-        Collection studentFiles = FileUtils.listFiles(classFolder, new String[] {"java"}, true);
+//        Collection studentFiles = FileUtils.listFiles(classProjDir, new NameFileFilter("build.xml"), true);
+        Collection studentXmlFiles = FileUtils.listFiles(classProjDir, new NameFileFilter("build.xml"), TrueFileFilter.TRUE);
+        for (Object studentXmlFile : studentXmlFiles) {
+            File buildXmlFile = (File) studentXmlFile;
 
-        for (Iterator iterator = studentFiles.iterator(); iterator.hasNext();) {
-            File javaFile = (File)iterator.next();
+            System.out.println("Compiling: " + buildXmlFile.getAbsolutePath());
+            System.out.println(compileJava(buildXmlFile.getAbsolutePath()));
+        }
 
-            if (javaFile.getName().compareTo(projectMainFilename) == 0) {
-                System.out.println("Execute: " + javaFile.getAbsolutePath());
-                System.out.println(compileJava(javaFile.getAbsolutePath()));
+        Collection studentJarFiles = FileUtils.listFiles(classProjDir, new String[]{"jar"}, true);
+        for (Object jarFile : studentJarFiles) {
+            File studentJarFile = (File) jarFile;
+
+            if(studentJarFile.getName().compareTo(projectMainFilename) == 0) {
+                System.out.println("Executing:" + studentJarFile.getAbsolutePath());
+                System.out.println(execJava(studentJarFile.getAbsolutePath(), ""));
             }
         }
     }

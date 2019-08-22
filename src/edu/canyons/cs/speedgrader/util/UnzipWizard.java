@@ -25,28 +25,29 @@ import net.lingala.zip4j.core.ZipFile;
 public class UnzipWizard {
     
     public static void unzipDir(File classFolder, String outputDirName) {
+        // TODO: rename variables to make more modular! i.e. not specific to speed_grader
         // unzips an entire directory using zip4j from unzip function
-        File studentProjArray[] = classFolder.listFiles();
+        File zipDirs[] = classFolder.listFiles();
 
-        for(File eachProj: studentProjArray) {
-            if(eachProj.isFile() && (eachProj.getName().endsWith(".zip"))) {
+        for(File zipFile: zipDirs) {
+            if(zipFile.isFile() && (zipFile.getName().endsWith(".zip"))) {
                 // create a new directory for the unzip using original project name
-                String fixedProjDir = eachProj.getName().replaceAll(".zip", "");
+                String fixedProjDir = zipFile.getName().replaceAll(".zip", "");
                 String outputFilePath = outputDirName + File.separator + fixedProjDir;
 
-                File outputFolder = new File(outputFilePath);
-                outputFolder.mkdirs();
+                File outputDir = new File(outputFilePath);
+                outputDir.mkdirs();
 
-                unzipFile(eachProj.getPath(), outputFolder);
+                unzipFile(zipFile.getPath(), outputDir.toString());
             } // end .zip finding logic
         } // end enumeration of class Folder
     } // end unzipDir(String): void
 
-    public static void unzipFile(String filePath, File outputFolder) {
+    public static void unzipFile(String filePath, String outputDirStr) {
         // utilizes the open source zip4j.jar to handle unzipping functionality
         try {
             ZipFile zipFile = new ZipFile(filePath);
-            zipFile.extractAll(outputFolder.toString());
+            zipFile.extractAll(outputDirStr);
         } catch (Exception e) {
             System.out.println(e);
         } // end catch statement

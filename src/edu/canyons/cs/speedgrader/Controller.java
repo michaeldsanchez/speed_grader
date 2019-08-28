@@ -36,10 +36,10 @@ public class Controller {
     }
 
     public String getArgs() {
-        String args = "";
+        StringBuilder args = new StringBuilder();
         for(TextField eachField: textFieldsArray) {
-            args += eachField.getText() + " ";
+            args.append(eachField.getText()).append(" ");
         }
-        return args;
+        return args.toString();
     }
 }

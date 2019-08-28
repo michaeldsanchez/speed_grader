@@ -84,6 +84,8 @@ public class SpeedGrader {
     private static String compileJava(String absBuildXmlPath) {
         // returns true if the compile process was successful
         // TODO: test a failed compile
+        // TODO: modularize process functions
+
         Process compileProcess = null;
         BufferedReader compileInputStream = null;
         BufferedReader compileErrorStream = null;
@@ -91,8 +93,13 @@ public class SpeedGrader {
 
         try {
             String commandStr;
+
+            // for attempting to find ant path with program
 //            System.out.println("PATH:" + System.getenv("ANT_HOME"));
 //            commandStr = System.getenv("ANT_HOME") + "/bin/ant -f " + absBuildXmlPath ;
+
+            // for using a hard-coded ant path
+            // TODO: make a config file to take this path and read it here
             File file = new File("/Applications/NetBeans/NetBeans8.2.app/Contents/Resources/NetBeans/extide/ant/bin/ant");
             commandStr = file.getAbsolutePath() + " -f " + absBuildXmlPath;
             System.out.println(commandStr);
@@ -135,15 +142,18 @@ public class SpeedGrader {
         return compileOutput.toString();
     } // end compileJava(String):boolean
 
-    private static String execJava(String absSourcePath, String args) {
+    private static String execJava(String projectMainFilename, String args) {
+        // TODO: modularize process functions
+
         Process execProcess = null;
         BufferedReader execStream = null;
         StringBuilder execOutput = new StringBuilder();
 
         try {
-            execProcess = Runtime.getRuntime().exec("java -jar " + absSourcePath + " " + args);
+            execProcess = Runtime.getRuntime().exec("java -jar " + projectMainFilename + " " + args);
 
             try {
+                // TODO: input redirection with java to take user input
                 execStream = new BufferedReader(new InputStreamReader(execProcess.getInputStream()));
 
                 String currentLine = execStream.readLine();
@@ -151,15 +161,19 @@ public class SpeedGrader {
                     execOutput.append(currentLine);
                     currentLine = execStream.readLine();
                 }
+
+                execProcess.destroy();
+
             } catch (IOException e) {
                 System.err.println("Error on: execStream.readline()");
                 e.printStackTrace();
             }
         } catch (IOException e) {
             // java object code failed to run
-            System.err.println("Error while running: java -jar " + absSourcePath);
+            System.err.println("Error while running: java -jar " + projectMainFilename);
             e.printStackTrace();
         }
+
         return execOutput.toString();
     } // end execJava(String, String):String
 
@@ -183,7 +197,6 @@ public class SpeedGrader {
         }
 
         // use apache commons library to find a file in our working directory of student projects
-//        Collection studentFiles = FileUtils.listFiles(classProjDir, new NameFileFilter("build.xml"), true);
         Collection studentXmlFiles = FileUtils.listFiles(classProjDir, new NameFileFilter("build.xml"), TrueFileFilter.TRUE);
         for (Object studentXmlFile : studentXmlFiles) {
             File buildXmlFile = (File) studentXmlFile;
@@ -196,9 +209,12 @@ public class SpeedGrader {
         for (Object jarFile : studentJarFiles) {
             File studentJarFile = (File) jarFile;
 
+            System.out.println("exec file: " + studentJarFile.getAbsolutePath());
             if(studentJarFile.getName().compareTo(projectMainFilename) == 0) {
-                System.out.println("Executing:" + studentJarFile.getAbsolutePath());
-                System.out.println(execJava(studentJarFile.getAbsolutePath(), ""));
+                for (Controller eachIter: controllersArray) {
+                    System.out.println("Executing:" + studentJarFile.getAbsolutePath());
+                    System.out.println(execJava(studentJarFile.getAbsolutePath(), eachIter.getArgs()));
+                }
             }
         }
     }

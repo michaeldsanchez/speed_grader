@@ -1,30 +1,29 @@
 package edu.canyons.cs.speedgrader;
 import edu.canyons.cs.speedgrader.util.UnzipWizard;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.sql.Time;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
-
+// imports for the GUI elements, using JavaFX and FXML
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.event.ActionEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 
-// apache dependency for finding a file
+//  imports for file manipulations and reading process streams
+import java.io.*;
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.concurrent.TimeUnit;
+
+// apache dependency for finding a file in a given directory
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.NameFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
 public class SpeedGrader {
-    // FXML variables for gui layout
+    // FXML variables for GUI layout and backend functionality
     @FXML private ChoiceBox<Integer> numCLAChoiceBox;
     @FXML private ChoiceBox<Integer> numIterChoiceBox;
+    @FXML private CheckBox userInputCheckBox;
     @FXML private Button generateButton;
     @FXML private VBox claIterVBox;
     @FXML private Button classProjDirButton;
@@ -36,7 +35,9 @@ public class SpeedGrader {
     @FXML private TextField projectMainTextField;
     @FXML private Button executeButton;
 
+    // for storing CLA inputs and program exec outputs for each individual iteration
     Controller[] controllersArray;
+    StringBuilder masterLogOutput;
 
     public void initialize() {
         // initialize the choice boxes with very basic values, Command Line Args:0-9 and Iterations:1-10
@@ -81,100 +82,127 @@ public class SpeedGrader {
         outputDirTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
     }
 
-    private static String compileJava(String absBuildXmlPath) {
-        // returns true if the compile process was successful
-        // TODO: test a failed compile
-        // TODO: modularize process functions
-
-        Process compileProcess = null;
-        BufferedReader compileInputStream = null;
-        BufferedReader compileErrorStream = null;
-        StringBuilder compileOutput = new StringBuilder();
+    private String runtimeProcess(String commandStr) {
+        Process runtimeProcess = null;
+        BufferedReader runtimeInputStream = null;
+        BufferedReader runtimeErrorStream = null;
+        StringBuilder runtimeOutput = new StringBuilder();
 
         try {
-            String commandStr;
-
-            // for attempting to find ant path with program
-//            System.out.println("PATH:" + System.getenv("ANT_HOME"));
-//            commandStr = System.getenv("ANT_HOME") + "/bin/ant -f " + absBuildXmlPath ;
-
-            // for using a hard-coded ant path
-            // TODO: make a config file to take this path and read it here
-            File file = new File("/Applications/NetBeans/NetBeans8.2.app/Contents/Resources/NetBeans/extide/ant/bin/ant");
-            commandStr = file.getAbsolutePath() + " -f " + absBuildXmlPath;
-            System.out.println(commandStr);
-            compileProcess = Runtime.getRuntime().exec(commandStr);
+            runtimeProcess = Runtime.getRuntime().exec(commandStr);
 
             try {
-                compileProcess.waitFor(30, TimeUnit.SECONDS);
+                runtimeProcess.waitFor(30, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
             try {
-                compileInputStream = new BufferedReader(new InputStreamReader(compileProcess.getInputStream()));
-                compileErrorStream = new BufferedReader(new InputStreamReader(compileProcess.getErrorStream()));
+                runtimeInputStream = new BufferedReader(new InputStreamReader(runtimeProcess.getInputStream()));
+                runtimeErrorStream = new BufferedReader(new InputStreamReader(runtimeProcess.getErrorStream()));
 
-                String inputLine = compileInputStream.readLine();
+                String inputLine = runtimeInputStream.readLine();
                 while (inputLine != null) {
-                    compileOutput.append(inputLine + "\n");
-                    inputLine = compileInputStream.readLine();
+                    runtimeOutput.append(inputLine);
+                    inputLine = runtimeInputStream.readLine();
                 }
 
-                String errorLine = compileErrorStream.readLine();
+                String errorLine = runtimeErrorStream.readLine();
                 while (errorLine != null) {
-                    compileOutput.append(errorLine + "\n");
-                    errorLine = compileErrorStream.readLine();
+                    runtimeOutput.append(errorLine + "\n");
+                    errorLine = runtimeErrorStream.readLine();
                 }
 
-                compileProcess.destroy();
+                runtimeProcess.destroy();
 
             } catch (IOException e) {
-                System.err.println("Error on: execStream.readline()");
+                System.err.println("Error on: readline()");
                 e.printStackTrace();
             }
-        } catch (IOException e) {
-            // java source code failed to compile
-            System.out.println("Error while running: ANT_HOME -f " + absBuildXmlPath);
-            e.printStackTrace();
-        }
 
-        return compileOutput.toString();
-    } // end compileJava(String):boolean
-
-    private static String execJava(String projectMainFilename, String args) {
-        // TODO: modularize process functions
-
-        Process execProcess = null;
-        BufferedReader execStream = null;
-        StringBuilder execOutput = new StringBuilder();
-
-        try {
-            execProcess = Runtime.getRuntime().exec("java -jar " + projectMainFilename + " " + args);
-
-            try {
-                // TODO: input redirection with java to take user input
-                execStream = new BufferedReader(new InputStreamReader(execProcess.getInputStream()));
-
-                String currentLine = execStream.readLine();
-                while (currentLine != null) {
-                    execOutput.append(currentLine);
-                    currentLine = execStream.readLine();
-                }
-
-                execProcess.destroy();
-
-            } catch (IOException e) {
-                System.err.println("Error on: execStream.readline()");
-                e.printStackTrace();
-            }
         } catch (IOException e) {
             // java object code failed to run
-            System.err.println("Error while running: java -jar " + projectMainFilename);
+            System.err.println("Error while running: " + commandStr );
             e.printStackTrace();
         }
 
-        return execOutput.toString();
+        return runtimeOutput.toString();
+    } // end runtimeProcess(String):String
+
+    private String compileJava(String absBuildXmlPath) {
+        // returns true if the compile process was successful
+        // TODO: test a failed compile
+        // TODO: modularize process functions
+
+//        Process compileProcess = null;
+//        BufferedReader compileInputStream = null;
+//        BufferedReader compileErrorStream = null;
+//        StringBuilder compileOutput = new StringBuilder();
+
+        String commandStr;
+        // for attempting to find ant path with program
+//            System.out.println("PATH:" + System.getenv("ANT_HOME"));
+//            commandStr = System.getenv("ANT_HOME") + "/bin/ant -f " + absBuildXmlPath ;
+
+        // for using a hard-coded ant path
+        // TODO: make a config file to take this path and read it here
+//        File file = new File("");
+        commandStr = "/Applications/NetBeans/NetBeans8.2.app/Contents/Resources/NetBeans/extide/ant/bin/ant -f " + absBuildXmlPath;
+        System.out.println(commandStr);
+
+        return runtimeProcess(commandStr);
+    } // end compileJava(String):boolean
+
+    private String execJava(String absJarPath, String args) {
+        // TODO: modularize process functions
+        String projectMainFilename = projectMainTextField.getText();
+
+//        Process execProcess = null;
+//        BufferedReader execStream = null;
+//        StringBuilder execOutput = new StringBuilder();
+
+        String commandStr = "java -jar " + absJarPath + " " + args;
+
+        if (userInputCheckBox.isSelected()) {
+            try {
+                BufferedWriter inputWriter = new BufferedWriter(new FileWriter(absJarPath.replace(projectMainFilename, "input.txt")));
+                inputWriter.write(args.replace(" ", "\n"));
+
+                commandStr = "java -jar " + absJarPath + " < input.txt";
+            } catch (IOException e) {
+                System.out.println("Error while writing to: input.txt");
+                e.printStackTrace();
+            }
+        }
+
+        System.out.println(commandStr);
+
+//        try {
+//            execProcess = Runtime.getRuntime().exec(commandStr);
+//
+//            try {
+//                // TODO: input redirection with java to take user input
+//                execStream = new BufferedReader(new InputStreamReader(execProcess.getInputStream()));
+//
+//                String currentLine = execStream.readLine();
+//                while (currentLine != null) {
+//                    execOutput.append(currentLine);
+//                    currentLine = execStream.readLine();
+//                }
+//
+//                execProcess.destroy();
+//
+//            } catch (IOException e) {
+//                System.err.println("Error on: readline()");
+//                e.printStackTrace();
+//            }
+//        } catch (IOException e) {
+//            // java object code failed to run
+//            System.err.println("Error while running: " + commandStr );
+//            e.printStackTrace();
+//        }
+
+        return runtimeProcess(commandStr);
     } // end execJava(String, String):String
 
     @FXML
@@ -182,6 +210,12 @@ public class SpeedGrader {
         // TODO: check that input & output file paths are selected
         // TODO: check that output path does not contain '.txt'
         // TODO: generate output text file using program outputs
+        // stamp the top of the output txt file with the current date
+        LocalDate localDate = LocalDate.now();
+        masterLogOutput.append("DATE GRADED: " + localDate.toString());
+
+        masterLogOutput.append("");
+
         // the folder which contains all of the java student projects
         File classProjDir = new File(classProjDirTextField.getText());
 
@@ -217,5 +251,35 @@ public class SpeedGrader {
                 }
             }
         }
+
+        // TODO: use checking to verify that output file is correctly saved and outputs logged
+        boolean isLogSuccess = writeLogOutputs();
+    }
+
+    public void appendLogOutput(String studentFile, int iterNum, String newOutput) {
+        // TODO: call helper methods to concatenate newOutputs to masterLogOutput
+        masterLogOutput.append("\nFILE: " + studentFile);
+        masterLogOutput.append("\n------ ITERATION " + iterNum + " ------\n");
+        masterLogOutput.append("\n** OUTPUT **\n" + newOutput);
+    }
+
+    public boolean writeLogOutputs() {
+        String outputFilename = outputFilenameTextField.getText();
+        BufferedWriter outputWriter;
+
+        try {
+            outputWriter = new BufferedWriter(new FileWriter(outputFilename));
+            outputWriter.write(masterLogOutput.toString());
+
+        } catch (IOException e) {
+            System.out.println("Error while writing to: " + outputFilename);
+            e.printStackTrace();
+
+            // writing outputs failed
+            return false;
+        }
+
+        // writing outputs succeeded
+        return true;
     }
 }

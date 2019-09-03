@@ -10,10 +10,10 @@
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="460.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.canyons.cs.speedgrader.SpeedGrader">
    <children>
       <ChoiceBox fx:id="numCLAChoiceBox" layoutX="53.0" layoutY="27.0" prefWidth="150.0" />
-      <Label layoutX="212.0" layoutY="32.0" text="# of CLA" />
+      <Label layoutX="212.0" layoutY="32.0" text="# of Inputs" />
       <ChoiceBox fx:id="numIterChoiceBox" layoutX="320.0" layoutY="27.0" prefWidth="150.0" />
       <Label layoutX="476.0" layoutY="32.0" text="# of Iterations" />
-      <Button fx:id="generateButton" layoutX="281.0" layoutY="61.0" mnemonicParsing="false" onAction="#handleGenerateButton" text="Generate" />
+      <Button fx:id="generateButton" layoutX="365.0" layoutY="62.0" mnemonicParsing="false" onAction="#handleGenerateButton" text="Generate" />
       <ScrollPane layoutX="70.0" layoutY="95.0" prefHeight="125.0" prefWidth="500.0">
          <padding>
             <Insets left="12.0" top="10.0" />
@@ -33,5 +33,6 @@
       <TextField fx:id="outputFilenameTextField" layoutX="425.0" layoutY="372.0" prefHeight="25.0" prefWidth="150.0" />
       <Label layoutX="577.0" layoutY="377.0" text=".txt" />
       <Button fx:id="executeButton" layoutX="289.0" layoutY="415.0" mnemonicParsing="false" onAction="#handleExecuteButton" text="Execute" />
+      <CheckBox fx:id="userInputCheckBox" layoutX="172.0" layoutY="66.0" mnemonicParsing="false" text="User Input (default: CLA)" />
    </children>
 </AnchorPane>

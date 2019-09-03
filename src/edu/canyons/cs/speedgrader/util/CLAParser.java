@@ -14,6 +14,4 @@ public class CLAParser {
     public static char getChar(String arg) {
         return arg.charAt(0);
     } // end getChar(String):char
-
-
 }

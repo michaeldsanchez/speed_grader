@@ -12,6 +12,7 @@ import javafx.stage.DirectoryChooser;
 import java.io.*;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 // apache dependency for finding a file in a given directory
@@ -28,14 +29,20 @@ public class SpeedGrader {
     @FXML private Button classProjDirButton;
     @FXML private TextField classProjDirTextField;
     @FXML private CheckBox unzipCheckBox;
-    @FXML private Button outputDirButton;
-    @FXML private TextField outputDirTextField;
+//    @FXML private Button outputDirButton;
+//    @FXML private TextField outputDirTextField;
     @FXML private TextField outputFilenameTextField;
-    @FXML private TextField projectMainTextField;
+    @FXML private TextField antPathTextField;
+//    @FXML private TextField projectMainTextField;
 
     // for storing CLA inputs and program exec outputs for each individual iteration
     Controller[] controllersArray;
+    File[] studentXMLFiles;
+    File[] studentJarFiles;
     StringBuilder masterLogOutput = new StringBuilder();
+    String absInputTxtPath; // for when input redirection is used
+    String absAntPath; // for compiling netbeans projects
+    Properties prop = new Properties(); // for saving configuration
 
     public void initialize() {
         // initialize the choice boxes with very basic values, Command Line Args:0-9 and Iterations:1-10
@@ -45,12 +52,21 @@ public class SpeedGrader {
         // set default values for choice boxes
         numCLAChoiceBox.getSelectionModel().selectFirst();
         numIterChoiceBox.getSelectionModel().selectFirst();
+
+        String antPath = getConfigProp("ant");
+        if (antPath != null) {
+            antPathTextField.setText(antPath);
+        }
     }
 
     @FXML
     private void handleGenerateButton(ActionEvent e) {
         int numIter = numIterChoiceBox.getSelectionModel().getSelectedItem();
         int numCLA = numCLAChoiceBox.getSelectionModel().getSelectedItem();
+
+        // for cleaning up the iterations panel after each button press
+        if(controllersArray != null)
+            claIterVBox.getChildren().clear();
 
         // init the array to store Controllers for the number of iterations needed
         controllersArray = new Controller[numIter];
@@ -73,12 +89,12 @@ public class SpeedGrader {
         classProjDirTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
     } // end handleInputPathButton(ActionEvent):void
 
-    @FXML private void handleOutputPathButton(ActionEvent e) {
-        DirectoryChooser outputPath = new DirectoryChooser();
-        File selectedDirectory = outputPath.showDialog(outputDirButton.getScene().getWindow());
+//    @FXML private void handleOutputPathButton(ActionEvent e) {
+//        DirectoryChooser outputPath = new DirectoryChooser();
+//        File selectedDirectory = outputPath.showDialog(outputDirButton.getScene().getWindow());
 
-        outputDirTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
-    } // end handleOutputPathButton(ActionEvent):void
+//        outputDirTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
+//    } // end handleOutputPathButton(ActionEvent):void
 
     private String runtimeProcess(String commandStr) {
         // handles the runtime processes of the given command string
@@ -102,13 +118,16 @@ public class SpeedGrader {
             } // end try-catch for process timeout
 
             try {
+                // for testing
+                System.out.print("reading runtime process input/error streams...");
+
                 // declare and init buffered readers to read command outputs and errors from the runtime process
                 runtimeInputStream = new BufferedReader(new InputStreamReader(runtimeProcess.getInputStream()));
                 runtimeErrorStream = new BufferedReader(new InputStreamReader(runtimeProcess.getErrorStream()));
 
                 String inputLine = runtimeInputStream.readLine();
                 while (inputLine != null) {
-                    runtimeOutput.append(inputLine);
+                    runtimeOutput.append(inputLine + "\n");
                     inputLine = runtimeInputStream.readLine();
                 } // end while for reading and storing output
 
@@ -134,43 +153,17 @@ public class SpeedGrader {
         return runtimeOutput.toString();
     } // end runtimeProcess(String):String
 
-    private String compileJava(String absBuildXmlPath) {
-        // TODO: this function can be eliminated?
-
-        String commandStr;
-        // TODO: make a config file to take this path and read it here
-        commandStr = "/Applications/NetBeans/NetBeans8.2.app/Contents/Resources/NetBeans/extide/ant/bin/ant -f " + absBuildXmlPath;
-        System.out.println(commandStr);
-
-        return runtimeProcess(commandStr);
-    } // end compileJava(String):String
-
     private String execJava(String absJarPath, String args) {
-        String projectMainFilename = projectMainTextField.getText();
         String commandStr = "java -jar " + absJarPath + " " + args;
 
         if (userInputCheckBox.isSelected()) {
             // instead of executing the program with CLA, use input redirection
-            try {
-                // TODO: test with using an abs path to a global input.txt file
-                String absInputTxtPath = classProjDirTextField.getText() + File.separator + "input.txt";
-                System.out.println("writing to: " + absInputTxtPath);
-                BufferedWriter inputWriter = new BufferedWriter(new FileWriter(absInputTxtPath));
-
-                inputWriter.write(args.replace(" ", "\n"));
-                inputWriter.close();
-
-                commandStr = "java -jar " + absJarPath + " < " + absInputTxtPath;
-
-            } catch (IOException e) {
-                System.out.println("Error while writing to: input.txt");
-                e.printStackTrace();
-            } // end try-catch for writing user input to input.txt file
+            commandStr = "java -jar " + absJarPath + " < " + absInputTxtPath;
         } // end if statement for test input type
 
-        System.out.println(commandStr);
+        System.out.println("Executing:" + commandStr);
 
-        return runtimeProcess(commandStr);
+        return "COMMAND: " + commandStr + "\n\n" + runtimeProcess(commandStr);
     } // end execJava(String, String):String
 
     @FXML
@@ -179,72 +172,142 @@ public class SpeedGrader {
         // TODO: generate output text file using program outputs
         // stamp the top of the output txt file with the current date
         LocalDate localDate = LocalDate.now();
-        masterLogOutput.append("DATE GRADED: " + localDate.toString());
+        String dateGradedStr = "DATE GRADED: " + localDate.toString() + "\n\n";
+        masterLogOutput.append(dateGradedStr);
 
-        masterLogOutput.append("");
+        // do not run execution logic if any of the textfields are missing
+        boolean cancelExecution = false;
+        if (classProjDirTextField.getText().isEmpty() || classProjDirTextField.getText().equals("Please enter the class project directory")) {
+            classProjDirTextField.setText("Please enter the class project directory");
+            cancelExecution = true;
+        }
+        if (outputFilenameTextField.getText().isEmpty() || outputFilenameTextField.getText().equals("Please enter the output filename")) {
+            outputFilenameTextField.setText("Please enter the output filename");
+            cancelExecution = true;
+        }
+        if (antPathTextField.getText().isEmpty() || antPathTextField.getText().equals("Please enter the ant path")) {
+            antPathTextField.setText("Please enter the ant path");
+            cancelExecution = true;
+        }
+        if (cancelExecution)
+            return;
+
+        // TODO: wrap this into another function which lies in a popup config menu?
+        String antPath = antPathTextField.getText();
+        setConfigProp("ant", antPath);
 
         // the folder which contains all of the java student projects
         File classProjDir = new File(classProjDirTextField.getText());
 
-        // the name of the project which will be used when executing each student's .jar file
-        String projectMainFilename = projectMainTextField.getText() + ".jar";
-
         if (unzipCheckBox.isSelected()) {
             // user specifies that unzipping is required for given class folder
-            UnzipWizard.unzipDir(classProjDir, outputDirTextField.getText());
-
-            // output unzipped contents to specified output directory, becomes new working directory
-            classProjDir = new File(outputDirTextField.getText());
+            UnzipWizard.unzipDir(classProjDir); // output unzipped contents to class projects directory
         } // end if statement for unzip option
 
+        if (userInputCheckBox.isSelected()) {
+            try {
+                absInputTxtPath = classProjDirTextField.getText() + File.separator + "input.txt";
+                System.out.println("writing input to: " + absInputTxtPath + ".txt");
+                BufferedWriter inputWriter = new BufferedWriter(new FileWriter(absInputTxtPath));
+
+                // reformat cla string so that the input arguments are newline separated instead
+                inputWriter.write(Controller.getArgs().replace(" ", "\n"));
+                inputWriter.close();
+            } catch (IOException r) {
+                System.out.println("Error while writing to: input.txt");
+                r.printStackTrace();
+            } // end try-catch for writing user input to input.txt file
+        } // end if statement for test input type
+
         // use apache commons library to find all of the build.xml files in the working directory of student projects
-        Collection studentXmlFiles = FileUtils.listFiles(classProjDir, new NameFileFilter("build.xml"), TrueFileFilter.TRUE);
-        for (Object studentXmlFile : studentXmlFiles) {
+        Collection studentFiles = FileUtils.listFiles(classProjDir, new NameFileFilter("build.xml"), TrueFileFilter.TRUE);
+        String commandStr; // the command that will be executed by the java runtime process
+
+        for (Object studentXmlFile : studentFiles) {
             File buildXmlFile = (File) studentXmlFile;
 
-            System.out.println("Compiling: " + buildXmlFile.getAbsolutePath());
-            System.out.println(compileJava(buildXmlFile.getAbsolutePath()));
+            // get the absolute ant path from the config.properties
+            String absAntPath = getConfigProp("ant");
+
+            // TODO: read this path to ant from config file
+            commandStr = absAntPath + " -f " + buildXmlFile.getAbsolutePath();
+            System.out.println("Compiling: " + commandStr);
+
+            // execute the given command using java runtime process
+            System.out.println(runtimeProcess(commandStr));
         } // end build.xml files for-loop
 
-        // use apache commons library to find all of the .jar files in the working directory of student projects
-        Collection studentJarFiles = FileUtils.listFiles(classProjDir, new String[]{"jar"}, true);
-        for (Object jarFile : studentJarFiles) {
+        for (Object jarFile : studentFiles) {
+            if (jarFile == null)
+                continue;
+
             File studentJarFile = (File) jarFile;
+            String studentJarPath = studentJarFile.getAbsolutePath().replace("build.xml", "dist/*.jar");
 
-            // for testing that the correct project name is being used to execute
-            System.out.println("exec file: " + studentJarFile.getAbsolutePath());
+            for (Controller eachIter: controllersArray) {
+                String outputLog = execJava(studentJarPath, eachIter.getArgs());
 
-            if(studentJarFile.getName().compareTo(projectMainFilename) == 0) {
-                for (Controller eachIter: controllersArray) {
-                    System.out.println("Executing:" + studentJarFile.getAbsolutePath());
-                    System.out.println(execJava(studentJarFile.getAbsolutePath(), eachIter.getArgs()));
-                } // end iterations for-loop
-            } // end if statement for executing correct .jar file
+                appendStudentLog(studentJarPath);
+                appendIterOutputLog(eachIter.getIterNum(), outputLog);
+            } // end iterations for-loop
         } // end .jar files for-loop
 
         // TODO: use checking to verify that output file is correctly saved and outputs logged
         boolean isLogSuccess = writeLogOutputs();
+    } // end handleExecuteButton(ActionEvent):void
+
+    public String getConfigProp(String propName) {
+        // load the configuration from the properties file
+        try (InputStream input = new FileInputStream("config.properties")) {
+            prop.load(input); // load the properties file
+
+            return prop.getProperty(propName);
+        }
+        catch (IOException e) {
+            System.err.println("ERROR: while reading config.properties file");
+            e.printStackTrace();
+        }
+        return null;
+    } // end getConfigProp(String):String
+
+    public void setConfigProp(String propName, String propValue) {
+        // load the configuration from the properties file
+        try (OutputStream output = new FileOutputStream("config.properties")) {
+            prop.setProperty(propName, propValue); // set the properties value
+
+            prop.store(output, null);
+        }
+        catch (IOException e) {
+            System.err.println("ERROR: while writing config.properties file");
+            e.printStackTrace();
+        }
+    } // end setConfigProp(String):void
+
+    public void appendStudentLog(String student) {
+        masterLogOutput.append("\nFILE: " + student);
     }
 
-    public void appendLogOutput(String studentFile, int iterNum, String newOutput) {
-        // TODO: call helper methods to concatenate newOutputs to masterLogOutput
-        masterLogOutput.append("\nFILE: " + studentFile);
-        masterLogOutput.append("\n------ ITERATION " + iterNum + " ------\n");
-        masterLogOutput.append("\n** OUTPUT **\n" + newOutput);
+    public void appendIterOutputLog(int iter, String output) {
+        masterLogOutput.append("\n------ ITERATION " + iter + " ------\n");
+        masterLogOutput.append("\n** OUTPUT **\n" + output);
     }
 
     public boolean writeLogOutputs() {
         // use the output filename that the user entered to write final output log
-        String outputFilename = outputFilenameTextField.getText();
+        String outputFile = classProjDirTextField.getText() + File.separator + outputFilenameTextField.getText() + ".txt";
+
+        // for testing
+        System.out.println("output file written to:" + outputFile);
+
         BufferedWriter outputWriter;
 
         try {
-            outputWriter = new BufferedWriter(new FileWriter(outputFilename));
+            outputWriter = new BufferedWriter(new FileWriter(outputFile));
             outputWriter.write(masterLogOutput.toString());
 
             outputWriter.close();
         } catch (IOException e) {
-            System.out.println("Error while writing to: " + outputFilename);
+            System.out.println("Error while writing to: " + outputFile);
             e.printStackTrace();
 
             // writing outputs failed

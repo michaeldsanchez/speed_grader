@@ -24,7 +24,7 @@ import net.lingala.zip4j.core.ZipFile;
 
 public class UnzipWizard {
     
-    public static void unzipDir(File classFolder, String outputDirName) {
+    public static void unzipDir(File classFolder) {
         // TODO: rename variables to make more modular! i.e. not specific to speed_grader
         // unzips an entire directory using zip4j from unzip function
         File zipDirs[] = classFolder.listFiles();
@@ -33,7 +33,7 @@ public class UnzipWizard {
             if(zipFile.isFile() && (zipFile.getName().endsWith(".zip"))) {
                 // create a new directory for the unzip using original project name
                 String fixedProjDir = zipFile.getName().replaceAll(".zip", "");
-                String outputFilePath = outputDirName + File.separator + fixedProjDir;
+                String outputFilePath = classFolder.getAbsolutePath() + File.separator + fixedProjDir;
 
                 File outputDir = new File(outputFilePath);
                 outputDir.mkdirs();

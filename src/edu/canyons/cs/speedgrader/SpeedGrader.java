@@ -11,7 +11,10 @@ import javafx.stage.DirectoryChooser;
 //  imports for file manipulations and reading process streams
 import java.io.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -19,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.NameFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
 
 public class SpeedGrader {
     // FXML variables for GUI layout and backend functionality
@@ -46,7 +50,7 @@ public class SpeedGrader {
 
     public void initialize() {
         // initialize the choice boxes with very basic values, Command Line Args:0-9 and Iterations:1-10
-        numCLAChoiceBox.getItems().addAll(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);  // options 0-9 for num CLA
+        numCLAChoiceBox.getItems().addAll(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20);  // options 0-9 for num CLA
         numIterChoiceBox.getItems().addAll(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);  // options 1-10 for num iterations
 
         // set default values for choice boxes
@@ -96,7 +100,7 @@ public class SpeedGrader {
 //        outputDirTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
 //    } // end handleOutputPathButton(ActionEvent):void
 
-    private String runtimeProcess(String commandStr) {
+    private String runtimeProcess(List<String> commandStr) {
         // handles the runtime processes of the given command string
         // used for compiling and executing student projects using CLI
         Process runtimeProcess = null;
@@ -107,13 +111,20 @@ public class SpeedGrader {
         StringBuilder runtimeOutput = new StringBuilder();
 
         try {
-            runtimeProcess = Runtime.getRuntime().exec(commandStr);
+            String [] commandArray = new String [commandStr.size()];
+            int i= 0;
+            for(String cmdStr: commandStr) {
+                commandArray[i] = cmdStr;
+                i+=1;
+            }
+             
+            runtimeProcess = Runtime.getRuntime().exec(commandArray);
 
             try {
                 // mostly for compiling, give time for process to finish
                 runtimeProcess.waitFor(30, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                System.err.println("Error, process was interrupted: " + commandStr);
+                System.err.println("Error, process was interrupted: " + commandStr.toString());
                 e.printStackTrace();
             } // end try-catch for process timeout
 
@@ -154,14 +165,16 @@ public class SpeedGrader {
     } // end runtimeProcess(String):String
 
     private String execJava(String absJarPath, String args) {
-        String commandStr = "java -jar " + absJarPath + " " + args;
+//        String [] commandStr = "java -jar " + absJarPath + " " + args;
+        List<String> commandStr = new ArrayList<> (Arrays.asList("cmd.exe", "/C", "java", "-jar", absJarPath, args));
 
         if (userInputCheckBox.isSelected()) {
             // instead of executing the program with CLA, use input redirection
-            commandStr = "java -jar " + absJarPath + " < " + absInputTxtPath;
+            commandStr = new ArrayList<> (Arrays.asList("cmd.exe", "/C","java", "-jar", absJarPath, "<", absInputTxtPath));
+//            commandStr = "java -jar " + absJarPath + " < " + absInputTxtPath;
         } // end if statement for test input type
 
-        System.out.println("Executing:" + commandStr);
+        System.out.println("Executing:" + commandStr.toString());
 
         return "COMMAND: " + commandStr + "\n\n" + runtimeProcess(commandStr);
     } // end execJava(String, String):String
@@ -230,19 +243,23 @@ public class SpeedGrader {
             String absAntPath = getConfigProp("ant");
 
             // TODO: read this path to ant from config file
-            commandStr = absAntPath + " -f " + buildXmlFile.getAbsolutePath();
+//            commandStr = absAntPath + " -f " + buildXmlFile.getAbsolutePath();
+            File antDir = new File(absAntPath);
+            commandStr = antDir.getAbsolutePath() + " -f " + buildXmlFile.getAbsolutePath();
             System.out.println("Compiling: " + commandStr);
 
             // execute the given command using java runtime process
-            System.out.println(runtimeProcess(commandStr));
+            System.out.println(runtimeProcess(new ArrayList<String> (Arrays.asList("cmd.exe", "/C", "\"" + antDir.getAbsolutePath() + "\"", "-f", buildXmlFile.getAbsolutePath()))));
         } // end build.xml files for-loop
 
-        for (Object jarFile : studentFiles) {
+        Collection studentJars = FileUtils.listFiles(classProjDir, new WildcardFileFilter("*.jar"), TrueFileFilter.TRUE);
+
+        for (Object jarFile : studentJars) {
             if (jarFile == null)
                 continue;
 
             File studentJarFile = (File) jarFile;
-            String studentJarPath = studentJarFile.getAbsolutePath().replace("build.xml", "dist/*.jar");
+            String studentJarPath = studentJarFile.getAbsolutePath();
 
             for (Controller eachIter: controllersArray) {
                 String outputLog = execJava(studentJarPath, eachIter.getArgs());

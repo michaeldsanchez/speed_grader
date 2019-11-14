@@ -31,12 +31,14 @@ public class SpeedGrader {
     @FXML private CheckBox userInputCheckBox;
     @FXML private VBox claIterVBox;
     @FXML private Button classProjDirButton;
+    @FXML private Button antHomeDirButton;
     @FXML private TextField classProjDirTextField;
     @FXML private CheckBox unzipCheckBox;
+    @FXML private CheckBox UnixLinuxCheckBox;
 //    @FXML private Button outputDirButton;
 //    @FXML private TextField outputDirTextField;
     @FXML private TextField outputFilenameTextField;
-    @FXML private TextField antPathTextField;
+    @FXML private TextField antDirTextField;
 //    @FXML private TextField projectMainTextField;
 
     // for storing CLA inputs and program exec outputs for each individual iteration
@@ -59,7 +61,7 @@ public class SpeedGrader {
 
         String antPath = getConfigProp("ant");
         if (antPath != null) {
-            antPathTextField.setText(antPath);
+            antDirTextField.setText(antPath);
         }
     }
 
@@ -86,19 +88,29 @@ public class SpeedGrader {
 
     } // end handleGenerateButton(ActionEvent):void
 
-    @FXML private void handleInputPathButton(ActionEvent e) {
-        DirectoryChooser inputPath = new DirectoryChooser();
-        File selectedDirectory = inputPath.showDialog(classProjDirButton.getScene().getWindow());
-
-        classProjDirTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
+    @FXML private void handleInputDirButton(ActionEvent e) {
+        handleDirChooser(classProjDirButton, classProjDirTextField);
+//        DirectoryChooser inputPath = new DirectoryChooser();
+//        File selectedDirectory = inputPath.showDialog(classProjDirButton.getScene().getWindow());
+//
+//        classProjDirTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
     } // end handleInputPathButton(ActionEvent):void
 
-//    @FXML private void handleOutputPathButton(ActionEvent e) {
-//        DirectoryChooser outputPath = new DirectoryChooser();
-//        File selectedDirectory = outputPath.showDialog(outputDirButton.getScene().getWindow());
+    @FXML
+    private void handleAntDirButton(ActionEvent e) {
+        handleDirChooser(antHomeDirButton, antDirTextField);
+//        DirectoryChooser antPath = new DirectoryChooser();
+//        File selectedDirectory = antPath.showDialog(antHomeDirButton.getScene().getWindow());
+//
+//        antPathTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
+    }
 
-//        outputDirTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
-//    } // end handleOutputPathButton(ActionEvent):void
+    private void handleDirChooser(Button chooserButton, TextField pathTextField) {
+        DirectoryChooser path = new DirectoryChooser();
+        File selectedDirectory = path.showDialog(chooserButton.getScene().getWindow());
+
+        pathTextField.setText((selectedDirectory == null) ? "Please Select a Directory": selectedDirectory.getAbsolutePath());
+    }
 
     private String runtimeProcess(List<String> commandStr) {
         // handles the runtime processes of the given command string
@@ -117,7 +129,7 @@ public class SpeedGrader {
                 commandArray[i] = cmdStr;
                 i+=1;
             }
-             
+
             runtimeProcess = Runtime.getRuntime().exec(commandArray);
 
             try {
@@ -164,20 +176,25 @@ public class SpeedGrader {
         return runtimeOutput.toString();
     } // end runtimeProcess(String):String
 
-    private String execJava(String absJarPath, String args) {
-//        String [] commandStr = "java -jar " + absJarPath + " " + args;
-        List<String> commandStr = new ArrayList<> (Arrays.asList("cmd.exe", "/C", "java", "-jar", absJarPath, args));
+//    private String execJava() {
+        // List<String> commandStr = null;
+        // if (UnixLinuxCheckBox.isSelected())
+        //     commandStr = new ArrayList<> (Arrays.asList("java", "-jar", absJarPath, args));
+        // else
+        //     commandStr = new ArrayList<> (Arrays.asList("cmd.exe", "/C", "java", "-jar", absJarPath, args));
 
-        if (userInputCheckBox.isSelected()) {
-            // instead of executing the program with CLA, use input redirection
-            commandStr = new ArrayList<> (Arrays.asList("cmd.exe", "/C","java", "-jar", absJarPath, "<", absInputTxtPath));
-//            commandStr = "java -jar " + absJarPath + " < " + absInputTxtPath;
-        } // end if statement for test input type
+        // if (userInputCheckBox.isSelected()) {
+        //     // instead of executing the program with CLA, use input redirection
+        //     if (UnixLinuxCheckBox.isSelected())
+        //         commandStr = new ArrayList<> (Arrays.asList("java", "-jar", absJarPath, "<", absInputTxtPath));
+        //     else
+        //         commandStr = new ArrayList<> (Arrays.asList("cmd.exe", "/C","java", "-jar", absJarPath, "<", absInputTxtPath));
+//        } // end if statement for test input type
 
-        System.out.println("Executing:" + commandStr.toString());
-
-        return "COMMAND: " + commandStr + "\n\n" + runtimeProcess(commandStr);
-    } // end execJava(String, String):String
+//        System.out.println("Executing:" + commandStr.toString());
+//
+//        return "COMMAND: " + commandStr + "\n\n" + runtimeProcess(commandStr);
+//    } // end execJava(String, String):String
 
     @FXML
     private void handleExecuteButton(ActionEvent e) {
@@ -198,15 +215,15 @@ public class SpeedGrader {
             outputFilenameTextField.setText("Please enter the output filename");
             cancelExecution = true;
         }
-        if (antPathTextField.getText().isEmpty() || antPathTextField.getText().equals("Please enter the ant path")) {
-            antPathTextField.setText("Please enter the ant path");
+        if (antDirTextField.getText().isEmpty() || antDirTextField.getText().equals("Please enter the ant path")) {
+            antDirTextField.setText("Please enter the ant path");
             cancelExecution = true;
         }
         if (cancelExecution)
             return;
 
         // TODO: wrap this into another function which lies in a popup config menu?
-        String antPath = antPathTextField.getText();
+        String antPath = antDirTextField.getText();
         setConfigProp("ant", antPath);
 
         // the folder which contains all of the java student projects
@@ -245,14 +262,21 @@ public class SpeedGrader {
             // TODO: read this path to ant from config file
 //            commandStr = absAntPath + " -f " + buildXmlFile.getAbsolutePath();
             File antDir = new File(absAntPath);
-            commandStr = antDir.getAbsolutePath() + " -f " + buildXmlFile.getAbsolutePath();
-            System.out.println("Compiling: " + commandStr);
+//            commandStr = antDir.getAbsolutePath() + " -f " + buildXmlFile.getAbsolutePath();
+//            System.out.println("Compiling: " + commandStr);
 
             // execute the given command using java runtime process
-            System.out.println(runtimeProcess(new ArrayList<String> (Arrays.asList("cmd.exe", "/C", "\"" + antDir.getAbsolutePath() + "\"", "-f", buildXmlFile.getAbsolutePath()))));
+            if (UnixLinuxCheckBox.isSelected())
+                System.out.println(runtimeProcess(new ArrayList<String> (Arrays.asList(antDir.getAbsolutePath(), "-f", buildXmlFile.getAbsolutePath()))));
+            else
+                System.out.println(runtimeProcess(new ArrayList<String> (Arrays.asList("cmd.exe", "/C", "\"" + antDir.getAbsolutePath() + "\"", "-f", buildXmlFile.getAbsolutePath()))));
         } // end build.xml files for-loop
 
         Collection studentJars = FileUtils.listFiles(classProjDir, new WildcardFileFilter("*.jar"), TrueFileFilter.TRUE);
+
+        // generate a string containing all of the jar files to generate script list
+        String jarFileList = "";
+        ArrayList<String> commandStrArr;
 
         for (Object jarFile : studentJars) {
             if (jarFile == null)
@@ -260,14 +284,26 @@ public class SpeedGrader {
 
             File studentJarFile = (File) jarFile;
             String studentJarPath = studentJarFile.getAbsolutePath();
+            jarFileList += studentJarPath + " ";
 
-            for (Controller eachIter: controllersArray) {
-                String outputLog = execJava(studentJarPath, eachIter.getArgs());
-
-                appendStudentLog(studentJarPath);
-                appendIterOutputLog(eachIter.getIterNum(), outputLog);
-            } // end iterations for-loop
+            appendStudentLog(studentJarPath);
         } // end .jar files for-loop
+
+        String execString;
+        for (Controller eachIter: controllersArray) {
+            // for every iteration, get the arguments and generate shell script
+
+            execString = writeBashScript(jarFileList, eachIter.getArgs(), eachIter.getIterNum());
+            commandStrArr = new ArrayList<String> (Arrays.asList("chmod", "755", execString));
+            runtimeProcess(commandStrArr);
+
+            commandStrArr = new ArrayList<> (Arrays.asList("bash", execString));
+            runtimeProcess(commandStrArr);
+            // String outputLog = execJava(studentJarPath, eachIter.getArgs());
+
+            // modify user privileges on the shell script
+            appendIterOutputLog(eachIter.getIterNum(), "DEPRECATED");
+        } // end iterations for-loop
 
         // TODO: use checking to verify that output file is correctly saved and outputs logged
         boolean isLogSuccess = writeLogOutputs();
@@ -333,5 +369,36 @@ public class SpeedGrader {
 
         // writing outputs succeeded
         return true;
+    }
+
+    public String writeBashScript(String jarFileList, String iterArgs, int iterNum) {
+        BufferedWriter scriptWriter;
+        String filename = "";
+
+        try {
+            // TODO: add checks for Linux vs. Windows
+            filename = "auto-script-iter" + iterNum + ".sh";
+            scriptWriter = new BufferedWriter(new FileWriter(filename));
+
+            // shebang and initial script information
+            scriptWriter.write("#!/bin/bash\n");
+            scriptWriter.write("# this script was auto generated using SpeedGrader\n");
+
+            scriptWriter.write("files='" + jarFileList + "'\n");
+            scriptWriter.write("for file in $files\n");
+            scriptWriter.write("do\n");
+            // TODO: add checks for CLA vs. User Input
+            scriptWriter.write("    java $file < " + absInputTxtPath + "\n"); // for user input
+            scriptWriter.write("done\n");
+
+            scriptWriter.write("echo Goodbye World! from bash\n");
+
+            scriptWriter.close();
+        } catch (IOException e) {
+            System.out.println("Error while writing bash script...");
+            e.printStackTrace();
+        }
+
+        return filename;
     }
 }

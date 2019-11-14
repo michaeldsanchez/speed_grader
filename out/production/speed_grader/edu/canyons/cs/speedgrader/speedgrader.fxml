@@ -15,28 +15,27 @@
       <ChoiceBox fx:id="numIterChoiceBox" layoutX="322.0" layoutY="37.0" prefWidth="150.0" />
       <Label layoutX="478.0" layoutY="42.0" text="# of Iterations" />
       <Button fx:id="generateButton" layoutX="367.0" layoutY="72.0" mnemonicParsing="false" onAction="#handleGenerateButton" text="Generate" />
-      <ScrollPane layoutX="72.0" layoutY="105.0" prefHeight="159.0" prefWidth="500.0">
+      <ScrollPane layoutX="72.0" layoutY="105.0" prefHeight="203.0" prefWidth="500.0">
          <padding>
             <Insets left="12.0" top="10.0" />
          </padding>
          <content>
-            <VBox fx:id="claIterVBox" layoutX="60.0" layoutY="90.0" prefHeight="144.0" prefWidth="475.0" />
+            <VBox fx:id="claIterVBox" layoutX="60.0" layoutY="90.0" prefHeight="201.0" prefWidth="475.0" />
          </content></ScrollPane>
-      <Button fx:id="classProjDirButton" layoutX="52.0" layoutY="276.0" mnemonicParsing="false" onAction="#handleInputDirButton" text="Class Projects Directory" />
-      <CheckBox fx:id="unzipCheckBox" layoutX="504.0" layoutY="281.0" mnemonicParsing="false" text="Unzip" />
-      <TextField fx:id="classProjDirTextField" layoutX="52.0" layoutY="312.0" prefHeight="27.0" prefWidth="532.0" />
-      <Label layoutX="80.0" layoutY="424.0" text="Output Filename:" />
-      <TextField fx:id="outputFilenameTextField" layoutX="185.0" layoutY="419.0" prefHeight="27.0" prefWidth="166.0" />
-      <Label layoutX="357.0" layoutY="424.0" text=".txt" />
-      <Button fx:id="executeButton" layoutX="423.0" layoutY="419.0" mnemonicParsing="false" onAction="#handleExecuteButton" text="Execute" />
+      <Button fx:id="classProjDirButton" layoutX="55.0" layoutY="316.0" mnemonicParsing="false" onAction="#handleInputPathButton" text="Class Projects Directory" />
+      <CheckBox fx:id="unzipCheckBox" layoutX="233.0" layoutY="321.0" mnemonicParsing="false" text="Unzip" />
+      <TextField fx:id="classProjDirTextField" layoutX="72.0" layoutY="348.0" prefWidth="500.0" />
+      <Label layoutX="150.0" layoutY="388.0" text="Output Filename:" />
+      <TextField fx:id="outputFilenameTextField" layoutX="265.0" layoutY="383.0" prefHeight="27.0" prefWidth="166.0" />
+      <Label layoutX="433.0" layoutY="388.0" text=".txt" />
+      <Button fx:id="executeButton" layoutX="491.0" layoutY="419.0" mnemonicParsing="false" onAction="#handleExecuteButton" text="Execute" />
       <CheckBox fx:id="userInputCheckBox" layoutX="174.0" layoutY="76.0" mnemonicParsing="false" text="User Input (default: CLA)" />
       <Label layoutX="242.0" layoutY="8.0" text="Speed Grader">
          <font>
             <Font size="24.0" />
          </font>
       </Label>
-      <TextField fx:id="antDirTextField" layoutX="50.0" layoutY="380.0" prefHeight="27.0" prefWidth="532.0" />
-      <CheckBox fx:id="UnixLinuxCheckBox" layoutX="478.0" layoutY="350.0" mnemonicParsing="false" text="Unix/ Linux" />
-      <Button fx:id="antHomeDirButton" layoutX="52.0" layoutY="345.0" mnemonicParsing="false" onAction="#handleAntDirButton" text="Ant Home Directory" />
+      <TextField fx:id="antPathTextField" layoutX="148.0" layoutY="419.0" prefHeight="27.0" prefWidth="336.0" />
+      <Label layoutX="85.0" layoutY="424.0" text="Ant Path:" />
    </children>
 </AnchorPane>

@@ -10,17 +10,17 @@
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="460.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.canyons.cs.speedgrader.SpeedGrader">
    <children>
-      <ChoiceBox fx:id="numCLAChoiceBox" layoutX="55.0" layoutY="37.0" prefWidth="150.0" />
+      <ChoiceBox fx:id="numArgsChoiceBox" layoutX="55.0" layoutY="37.0" prefWidth="150.0" />
       <Label layoutX="214.0" layoutY="42.0" text="# of Inputs" />
       <ChoiceBox fx:id="numIterChoiceBox" layoutX="322.0" layoutY="37.0" prefWidth="150.0" />
       <Label layoutX="478.0" layoutY="42.0" text="# of Iterations" />
-      <Button fx:id="generateButton" layoutX="367.0" layoutY="72.0" mnemonicParsing="false" onAction="#handleGenerateButton" text="Generate" />
+      <Button fx:id="generateButton" layoutX="285.0" layoutY="72.0" mnemonicParsing="false" onAction="#handleGenerateButton" text="Generate" />
       <ScrollPane layoutX="72.0" layoutY="105.0" prefHeight="159.0" prefWidth="500.0">
          <padding>
             <Insets left="12.0" top="10.0" />
          </padding>
          <content>
-            <VBox fx:id="claIterVBox" layoutX="60.0" layoutY="90.0" prefHeight="144.0" prefWidth="475.0" />
+            <VBox fx:id="IterVBox" layoutX="60.0" layoutY="90.0" prefHeight="144.0" prefWidth="475.0" />
          </content></ScrollPane>
       <Button fx:id="classProjDirButton" layoutX="52.0" layoutY="276.0" mnemonicParsing="false" onAction="#handleInputDirButton" text="Class Projects Directory" />
       <CheckBox fx:id="unzipCheckBox" layoutX="504.0" layoutY="281.0" mnemonicParsing="false" text="Unzip" />
@@ -29,7 +29,6 @@
       <TextField fx:id="outputFilenameTextField" layoutX="185.0" layoutY="419.0" prefHeight="27.0" prefWidth="166.0" />
       <Label layoutX="357.0" layoutY="424.0" text=".txt" />
       <Button fx:id="executeButton" layoutX="423.0" layoutY="419.0" mnemonicParsing="false" onAction="#handleExecuteButton" text="Execute" />
-      <CheckBox fx:id="userInputCheckBox" layoutX="174.0" layoutY="76.0" mnemonicParsing="false" text="User Input (default: CLA)" />
       <Label layoutX="242.0" layoutY="8.0" text="Speed Grader">
          <font>
             <Font size="24.0" />

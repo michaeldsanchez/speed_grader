@@ -1,6 +1,5 @@
 # Speed Grader
-An application for automating the project evaluating process for teaching assistants and professors in the Canyons' Computer
-Science program.
+An application for automating the project evaluating process for TAs and professors in the Canyon's Computer Science program. - developed by Michael D. Sanchez
 
 NOTE: Currently the program cannot successfully execute the student java projects. Instead, the command string used to
 create a java runtime process is logged to the output file for easy copy/paste execution.

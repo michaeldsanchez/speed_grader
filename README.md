@@ -1,8 +1,7 @@
 # Speed Grader
 An application for automating the project evaluating process for TAs and professors in the Canyon's Computer Science program. - developed by Michael D. Sanchez
 
-NOTE: Currently the program cannot successfully execute the student java projects. Instead, the command string used to
-create a java runtime process is logged to the output file for easy copy/paste execution.
+The program is now functional and performs Java program executions by running either a .bat or .sh file depending on operating system. Check the Unix box if you are running on either MacOS or any Linux distro.
 
 <img src="https://i.imgur.com/SwAdrs4.png" width="300">
 
